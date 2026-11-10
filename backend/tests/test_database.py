@@ -16,7 +16,12 @@ def test_init_db_creates_tables(empty_database):
 
     init_db()
 
-    assert set(inspect(engine).get_table_names()) == {"applications", "environments"}
+    assert set(inspect(engine).get_table_names()) == {
+        "applications",
+        "environments",
+        "executions",
+        "execution_logs",
+    }
 
 
 def test_seed_creates_three_applications_with_three_environments(session):

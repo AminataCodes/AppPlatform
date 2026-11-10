@@ -40,13 +40,15 @@ Represents one processed deployment request.
 | Field | Meaning |
 |---|---|
 | `id` | Unique identifier |
-| `application_id` | Application being deployed |
-| `environment_id` | Target environment |
+| `application_id` | Application being deployed (foreign key, required) |
+| `environment_id` | Target environment (foreign key, required) |
 | `requested_version` | Version requested |
-| `status` | `QUEUED`, `RUNNING`, `SUCCEEDED`, `FAILED` |
-| `created_at` | Creation timestamp |
-| `started_at` | Start timestamp |
-| `completed_at` | Completion timestamp |
+| `status` | `QUEUED` (default), `RUNNING`, `SUCCEEDED` or `FAILED` |
+| `created_at` | Creation timestamp, set automatically |
+| `started_at` | Start timestamp, empty until the execution starts |
+| `completed_at` | Completion timestamp, empty until the execution ends |
+
+The database restricts `status` to the four values above with a CHECK constraint.
 
 ### ExecutionLog
 
@@ -55,10 +57,16 @@ Represents one message generated during an execution.
 | Field | Meaning |
 |---|---|
 | `id` | Unique identifier |
-| `execution_id` | Parent execution |
-| `timestamp` | Time of log entry |
-| `level` | `INFO`, `WARNING` or `ERROR` |
+| `execution_id` | Parent execution (foreign key, required) |
+| `timestamp` | Time of log entry, set automatically |
+| `level` | `INFO` (default), `WARNING` or `ERROR` |
 | `message` | Log text |
+
+The database restricts `level` to the three values above with a CHECK constraint. Logs are ordered by creation and are deleted together with their execution.
+
+### Timestamps
+
+All timestamps are stored in UTC. SQLite does not keep time zone information, so the backend converts every date to UTC before writing it and marks it as UTC when reading it back. The frontend displays them in the user's local time.
 
 ## 2. Relationships
 
@@ -66,7 +74,25 @@ Represents one message generated during an execution.
 - One Environment belongs to one Application.
 - One Application can have many Executions.
 - One Environment can be targeted by many Executions over time.
+- One Execution belongs to one Application and one Environment.
 - One Execution has many ExecutionLogs.
+- One ExecutionLog belongs to one Execution.
+
+```text
+Application 1 ──── N Environment
+     │                   │
+     1                   1
+     │                   │
+     N                   N
+     └──── Execution ────┘
+               │
+               1
+               │
+               N
+          ExecutionLog
+```
+
+The database enforces that an execution references an existing application and an existing environment. The rule "the environment belongs to the execution's application" is enforced by the backend when a deployment is requested, not by a database constraint.
 
 ## 3. Version handling
 
