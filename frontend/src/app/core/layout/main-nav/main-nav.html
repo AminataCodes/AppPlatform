@@ -1,0 +1,20 @@
+<nav class="nav" aria-label="Navigation principale">
+  <ul class="nav__list">
+    @for (item of items; track item.path) {
+      <li>
+        <a
+          class="nav__link"
+          [routerLink]="item.path"
+          routerLinkActive="nav__link--active"
+          [routerLinkActiveOptions]="{ exact: item.exact }"
+          ariaCurrentWhenActive="page"
+        >
+          <svg class="nav__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path [attr.d]="item.icon" />
+          </svg>
+          <span>{{ item.label }}</span>
+        </a>
+      </li>
+    }
+  </ul>
+</nav>

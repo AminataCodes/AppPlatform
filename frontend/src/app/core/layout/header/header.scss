@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--header-height);
+  padding: 0 var(--space-6);
+  color: var(--color-header-text);
+  background: var(--color-header-bg);
+
+  // Sur fond sombre, le focus doit être clair pour rester visible
+  :focus-visible {
+    outline-color: var(--color-header-text);
+  }
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    color: inherit;
+  }
+}
+
+.header__logo {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  background: var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+
+.header__name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.header__tagline {
+  padding-left: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-header-muted);
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header__badge {
+  margin-left: auto;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-header-text);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+}
+
+@media (max-width: 48rem) {
+  .header {
+    padding: 0 var(--space-4);
+  }
+
+  .header__tagline {
+    display: none;
+  }
+}

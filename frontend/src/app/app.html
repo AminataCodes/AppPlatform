@@ -1,0 +1,15 @@
+<!-- Lien d'évitement : permet aux utilisateurs clavier d'aller directement au contenu -->
+<button type="button" class="skip-link" (click)="mainContent.focus()">
+  Aller au contenu principal
+</button>
+
+<div class="shell">
+  <app-header class="shell__header" />
+  <app-main-nav class="shell__nav" />
+
+  <main #mainContent class="shell__main" tabindex="-1">
+    <div class="shell__content">
+      <router-outlet />
+    </div>
+  </main>
+</div>

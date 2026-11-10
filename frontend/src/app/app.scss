@@ -1,0 +1,81 @@
+// Grille de la coquille : en-tête en haut, navigation à gauche, contenu à droite.
+.shell {
+  display: grid;
+  grid-template-columns: var(--nav-width) minmax(0, 1fr);
+  grid-template-rows: var(--header-height) 1fr;
+  grid-template-areas:
+    'header header'
+    'nav main';
+  min-height: 100vh;
+}
+
+.shell__header {
+  grid-area: header;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.shell__nav {
+  grid-area: nav;
+  position: sticky;
+  top: var(--header-height);
+  align-self: start;
+  height: calc(100vh - var(--header-height));
+}
+
+.shell__main {
+  grid-area: main;
+  padding: var(--space-8);
+
+  // Le focus est donné par le lien d'évitement : pas de contour sur toute la zone
+  &:focus {
+    outline: none;
+  }
+}
+
+.shell__content {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+
+// Écrans étroits : la navigation passe sous l'en-tête
+@media (max-width: 48rem) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--header-height) auto 1fr;
+    grid-template-areas:
+      'header'
+      'nav'
+      'main';
+  }
+
+  .shell__nav {
+    position: static;
+    height: auto;
+  }
+
+  .shell__main {
+    padding: var(--space-4);
+  }
+}
+
+.skip-link {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-4);
+  z-index: 20;
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transform: translateY(-200%);
+
+  &:focus {
+    transform: none;
+  }
+}
