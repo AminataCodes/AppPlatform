@@ -53,6 +53,7 @@ Endpoints disponibles :
 | GET | `/api/health` | Vérifier que l'API répond |
 | GET | `/api/applications` | Lister les applications, leurs environnements et versions disponibles |
 | GET | `/api/applications/{id}` | Détail d'une application (404 si elle n'existe pas) |
+| POST | `/api/deployments` | Demander un déploiement : vérifie les règles métier et crée une exécution `QUEUED` (202, ou 404 / 409 / 422) |
 
 ### Base de données
 
