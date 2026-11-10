@@ -46,11 +46,29 @@ python -m venv .venv
 
 `--reload` redémarre automatiquement le serveur à chaque modification du code.
 
+Endpoints disponibles :
+
+| Méthode | URL | Rôle |
+|---|---|---|
+| GET | `/api/health` | Vérifier que l'API répond |
+| GET | `/api/applications` | Lister les applications, leurs environnements et versions disponibles |
+| GET | `/api/applications/{id}` | Détail d'une application (404 si elle n'existe pas) |
+
+### Base de données
+
+- Fichier SQLite : `backend/appplatform.db` (ignoré par Git).
+- Au démarrage, l'API crée les tables manquantes puis ajoute les applications de démonstration
+  absentes (`app/seed.py`). Les données existantes ne sont jamais écrasées.
+- Pour repartir des données initiales : arrêter l'API, supprimer `appplatform.db`, relancer.
+
 ### Lancer les tests
 
 ```bash
 .venv\Scripts\python -m pytest
 ```
+
+Les tests utilisent une base SQLite temporaire, créée puis supprimée automatiquement :
+ils ne touchent jamais `appplatform.db`.
 
 > Astuce : après `.venv\Scripts\activate`, on peut écrire simplement `uvicorn …` et `pytest`.
 
@@ -93,7 +111,11 @@ AppPlatform/
 │   ├── requirements.txt   # dépendances Python
 │   ├── app/
 │   │   ├── main.py        # point d'entrée FastAPI
-│   │   ├── config.py      # configuration (nom, version, préfixe /api)
+│   │   ├── config.py      # configuration (nom, version, préfixe /api, base SQLite)
+│   │   ├── database.py    # connexion SQLite, sessions, dépendance get_db
+│   │   ├── models.py      # tables SQLAlchemy
+│   │   ├── schemas.py     # forme du JSON renvoyé (Pydantic)
+│   │   ├── seed.py        # données de démonstration
 │   │   ├── api/           # routes HTTP
 │   │   └── services/      # logique métier et simulation (phase 3)
 │   └── tests/             # tests pytest

@@ -13,9 +13,10 @@ Suggested fields:
 | Field | Meaning |
 |---|---|
 | `id` | Unique identifier |
-| `name` | Application name, e.g. `customer-api` |
+| `name` | Application name, e.g. `customer-api` (unique) |
 | `description` | Short description |
 | `owner_team` | Responsible team |
+| `available_versions` | Versions that can be requested for deployment, stored as a JSON list in a single column (see §3) |
 
 ### Environment
 
@@ -27,9 +28,10 @@ Represents one installation/context of an application.
 | `application_id` | Parent application |
 | `name` | `DEV`, `STAGING` or `PROD` |
 | `deployed_version` | Version currently recorded as deployed |
-| `status` | Simplified status for the demo |
 
-A simple V1 model can store one environment row per application/environment pair.
+The V1 model stores one environment row per application/environment pair, enforced by a unique constraint on (`application_id`, `name`). The database also restricts `name` to `DEV`, `STAGING` and `PROD`.
+
+An environment has no `status` field in V1: the state of a deployment is carried by its executions.
 
 ### Execution
 
@@ -68,7 +70,7 @@ Represents one message generated during an execution.
 
 ## 3. Version handling
 
-For V1, available versions can be a small predefined list in demo data or configuration. A separate Version entity is not required unless it makes the implementation clearer.
+For V1, available versions are a small predefined list defined in the demo data (seed) and stored in the `available_versions` JSON column of each Application. There is no separate Version entity or table. Every environment's `deployed_version` is one of its application's available versions.
 
 The environment's `deployed_version` is the version currently recorded as deployed there. The `requested_version` on an execution is the version the user asked to deploy. They are not interchangeable.
 
