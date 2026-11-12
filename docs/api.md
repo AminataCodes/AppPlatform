@@ -17,12 +17,12 @@
 | `GET` | `/api/applications` | List applications | Implemented |
 | `GET` | `/api/applications/{id}` | Get application details and environments | Implemented |
 | `POST` | `/api/deployments` | Request a deployment | Implemented |
-| `GET` | `/api/executions` | List executions | Planned |
-| `GET` | `/api/executions/{id}` | Get execution details and logs | Planned |
+| `GET` | `/api/executions` | List executions | Implemented |
+| `GET` | `/api/executions/{id}` | Get execution details and logs | Implemented |
 
 ## 3. `POST /api/deployments`
 
-Validates a deployment request and records it as an execution with status `QUEUED`. It does not run the deployment and does not change the environment's deployed version.
+Validates a deployment request, records it as an execution with status `QUEUED`, and schedules a **simulated** deployment in the background (FastAPI `BackgroundTasks`). The response is sent before the simulation runs: it describes the accepted request, never the final result. Clients follow the execution with `GET /api/executions/{id}` (see `workflows.md` for the lifecycle).
 
 ### Request body
 
@@ -46,7 +46,7 @@ Any other field (for example `status` or `created_at`) is rejected with `422`: s
 
 ### Response — `202 Accepted`
 
-`202` means the request has been accepted and recorded, but the deployment has not been executed yet.
+`202` means the request has been accepted and recorded, but the deployment has not been executed yet. The status is always `QUEUED` in this response.
 
 ```json
 {
@@ -73,17 +73,87 @@ Timestamps are UTC (ISO 8601, `Z` suffix).
 | `422` | Version not available for the application | `"La version 9.9.9 n'est pas disponible pour customer-api."` |
 | `422` | `PROD` target without `confirm_production: true` | `"Un déploiement en PROD doit être explicitement confirmé."` |
 | `409` | A `QUEUED` or `RUNNING` execution already exists on the target environment | `"Un déploiement est déjà en cours sur customer-api PROD (exécution 1)."` |
-| `422` | Malformed body (missing field, wrong type, empty version, unknown field) | List of field errors (see §5) |
+| `422` | Malformed body (missing field, wrong type, empty version, unknown field) | List of field errors (see §7) |
 
-The rules and their order are described in `business-rules.md`. A rejected request never creates an execution.
+The rules and their order are described in `business-rules.md`. A rejected request never creates an execution and never schedules a simulation.
 
-## 4. Validation responsibilities
+## 4. `GET /api/executions`
+
+Returns the execution history, newest first (by `created_at`, then `id`). Each item has the same shape as the `POST /api/deployments` response; logs are not included in the list.
+
+### Response — `200 OK`
+
+```json
+[
+  {
+    "id": 2,
+    "application": { "id": 1, "name": "customer-api" },
+    "environment": { "id": 1, "name": "DEV" },
+    "requested_version": "1.4.0",
+    "status": "FAILED",
+    "created_at": "2026-11-10T15:19:58.047511Z",
+    "started_at": "2026-11-10T15:19:58.066042Z",
+    "completed_at": "2026-11-10T15:20:03.116409Z"
+  },
+  {
+    "id": 1,
+    "application": { "id": 1, "name": "customer-api" },
+    "environment": { "id": 3, "name": "PROD" },
+    "requested_version": "1.2.0",
+    "status": "SUCCEEDED",
+    "created_at": "2026-11-10T15:19:47.046366Z",
+    "started_at": "2026-11-10T15:19:47.061934Z",
+    "completed_at": "2026-11-10T15:19:52.104382Z"
+  }
+]
+```
+
+Returns `[]` when no deployment has been requested. There is no pagination or filtering in V1.
+
+## 5. `GET /api/executions/{id}`
+
+Returns one execution with its logs, in chronological order. While the simulation is running, the status is `RUNNING` and new logs appear on each call: this is the endpoint the frontend polls.
+
+### Response — `200 OK`
+
+```json
+{
+  "id": 2,
+  "application": { "id": 1, "name": "customer-api" },
+  "environment": { "id": 1, "name": "DEV" },
+  "requested_version": "1.4.0",
+  "status": "FAILED",
+  "created_at": "2026-11-10T15:19:58.047511Z",
+  "started_at": "2026-11-10T15:19:58.066042Z",
+  "completed_at": "2026-11-10T15:20:03.116409Z",
+  "logs": [
+    { "id": 8, "timestamp": "2026-11-10T15:19:58.07Z", "level": "INFO", "message": "Démarrage du déploiement simulé de customer-api 1.4.0 vers DEV." },
+    { "id": 9, "timestamp": "2026-11-10T15:19:59.08Z", "level": "INFO", "message": "Validation de la configuration de l'application." },
+    { "id": 10, "timestamp": "2026-11-10T15:20:00.09Z", "level": "INFO", "message": "Préparation du paquet de déploiement customer-api:1.4.0." },
+    { "id": 11, "timestamp": "2026-11-10T15:20:01.10Z", "level": "INFO", "message": "Déploiement de la version 1.4.0 sur l'environnement DEV." },
+    { "id": 12, "timestamp": "2026-11-10T15:20:02.11Z", "level": "INFO", "message": "Vérification de l'état de santé de l'application." },
+    { "id": 13, "timestamp": "2026-11-10T15:20:03.11Z", "level": "ERROR", "message": "Échec du contrôle de santé : l'application ne répond pas (échec simulé de démonstration)." },
+    { "id": 14, "timestamp": "2026-11-10T15:20:03.11Z", "level": "WARNING", "message": "Version inchangée : DEV reste en 1.3.0." }
+  ]
+}
+```
+
+Log fields: `id`, `timestamp` (UTC), `level` (`INFO`, `WARNING` or `ERROR`), `message`.
+
+### Errors
+
+| Code | When | Example `detail` |
+|---|---|---|
+| `404` | Execution does not exist | `"Exécution 9999 introuvable."` |
+| `422` | `id` is not an integer | List of field errors |
+
+## 6. Validation responsibilities
 
 The backend verifies every rule listed above; the frontend may repeat them to guide the user, but cannot replace them.
 
 Production confirmation is an explicit acknowledgement required both in the UI and by the backend (`confirm_production`). It is not proof of authorization: V1 has no authentication or role checks.
 
-## 5. Error handling
+## 7. Error handling
 
 Errors use FastAPI's format: a JSON object with a `detail` field.
 

@@ -1,6 +1,6 @@
 """Route de demande de déploiement."""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from app.database import DbSession
 from app.schemas import DeploymentRequest, ExecutionRead
@@ -10,6 +10,7 @@ from app.services.deployment_service import (
     NotFoundError,
     request_deployment,
 )
+from app.services.simulation import run_simulation
 
 router = APIRouter(prefix="/deployments", tags=["deployments"])
 
@@ -23,7 +24,9 @@ router = APIRouter(prefix="/deployments", tags=["deployments"])
         422: {"description": "Requête invalide ou règle métier non respectée"},
     },
 )
-def create_deployment(request: DeploymentRequest, db: DbSession) -> ExecutionRead:
+def create_deployment(
+    request: DeploymentRequest, db: DbSession, background_tasks: BackgroundTasks
+) -> ExecutionRead:
     # 202 Accepted : la demande est enregistrée, mais le déploiement n'est pas encore exécuté.
     try:
         execution = request_deployment(db, request)
@@ -33,4 +36,8 @@ def create_deployment(request: DeploymentRequest, db: DbSession) -> ExecutionRea
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error))
     except DeploymentConflictError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error))
+
+    # La simulation démarrera après l'envoi de la réponse : le client reçoit
+    # l'exécution telle qu'acceptée (QUEUED), puis suit son évolution.
+    background_tasks.add_task(run_simulation, execution.id)
     return ExecutionRead.model_validate(execution)

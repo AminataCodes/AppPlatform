@@ -37,15 +37,32 @@ Additional points:
 - Rule F is scoped to the target environment: an active execution on another environment, or on another application, does not block the request. `SUCCEEDED` and `FAILED` executions never block.
 - Redeploying the version already deployed in the environment is allowed; the UI should warn the user.
 - The client cannot set the execution status or timestamps: unknown fields are rejected.
-- When all rules pass, the backend creates an execution with status `QUEUED`, `created_at` set to the current UTC time, and empty `started_at` / `completed_at`. The environment's `deployed_version` is not changed at this stage.
+- When all rules pass, the backend creates an execution with status `QUEUED`, `created_at` set to the current UTC time, and empty `started_at` / `completed_at`, then schedules the simulated deployment. The environment's `deployed_version` is not changed at this stage.
 
-## 4. Failure semantics
+## 4. Deployed version update
+
+The environment's `deployed_version` changes in exactly one situation: when a simulated deployment ends with `SUCCEEDED`. It then becomes the execution's `requested_version`.
+
+- It is never changed when a request is accepted, while the execution is `QUEUED` or `RUNNING`, or when the execution ends with `FAILED`.
+- The new version and the `SUCCEEDED` status are saved in the same database transaction: the version can never be observed as updated for an execution that did not succeed.
+- Only the target environment changes; the application's other environments keep their versions.
+
+## 5. Deterministic failure scenario (demonstration only)
+
+To demonstrate both outcomes reliably, the simulation applies one fixed rule:
+
+- `customer-api` with `requested_version` `1.4.0` always ends with `FAILED`, whatever the target environment. The execution records an `ERROR` log explaining the simulated health-check failure, and the environment keeps its previous version.
+- Every other valid request ends with `SUCCEEDED`, unless an unexpected error interrupts the simulation.
+
+This is **not a business rule** of AppPlatform or of `customer-api`: it is a simulation-only demonstration rule. Version `1.4.0` is accepted by the request validation like any other available version; it only fails during the simulated deployment.
+
+## 6. Failure semantics
 
 A simulated failure means the deployment process did not complete successfully. The previous deployed version remains recorded in V1.
 
 In real systems, failure may occur after partial changes. Real platforms may need health checks, rollback or recovery procedures. Those are outside V1.
 
-## 5. State transitions
+## 7. State transitions
 
 Allowed simplified execution path:
 
@@ -56,3 +73,5 @@ or
 `QUEUED` → `RUNNING` → `FAILED`
 
 Do not allow a completed execution to silently change from `FAILED` to `SUCCEEDED` or vice versa.
+
+The simulation enforces this: it only starts an execution that is still `QUEUED` (atomic conditional update to `RUNNING`), so a `RUNNING`, `SUCCEEDED` or `FAILED` execution is never processed again.

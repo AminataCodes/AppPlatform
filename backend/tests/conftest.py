@@ -12,6 +12,8 @@ from pathlib import Path
 
 TEST_DB_DIR = Path(tempfile.mkdtemp(prefix="appplatform-tests-"))
 os.environ["APPPLATFORM_DATABASE_URL"] = f"sqlite:///{TEST_DB_DIR / 'test.db'}"
+# Pas d'attente entre les étapes de la simulation pendant les tests.
+os.environ["APPPLATFORM_SIMULATION_STEP_DELAY_SECONDS"] = "0"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

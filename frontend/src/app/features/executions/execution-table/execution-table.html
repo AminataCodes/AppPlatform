@@ -1,0 +1,35 @@
+<div class="table-wrapper">
+  <table class="table">
+    <caption class="visually-hidden">{{ caption() }}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Statut</th>
+        <th scope="col">Application</th>
+        <th scope="col">Environnement</th>
+        <th scope="col">Version demandée</th>
+        <th scope="col">Demandée le</th>
+        <th scope="col"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (execution of executions(); track execution.id) {
+        <tr>
+          <td><app-status-badge [status]="execution.status" /></td>
+          <td>{{ execution.application.name }}</td>
+          <td>
+            <span class="env-tag" [class.env-tag--prod]="execution.environment.name === 'PROD'">
+              {{ execution.environment.name }}
+            </span>
+          </td>
+          <td class="version">{{ execution.requested_version }}</td>
+          <td>{{ execution.created_at | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+          <td>
+            <a [routerLink]="['/executions', execution.id]">
+              Détails<span class="visually-hidden"> de l'exécution {{ execution.id }}</span>
+            </a>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -56,6 +56,201 @@ a:hover {
   border: 0;
 }
 
+// ---------------------------------------------------------------------------
+// Composants de base du design system, partagés par tous les écrans.
+// ---------------------------------------------------------------------------
+
+// Boutons (aussi utilisables sur un lien <a>)
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.btn--primary {
+  color: #ffffff;
+  background: var(--color-primary);
+
+  &:hover:not(:disabled) {
+    color: #ffffff;
+    background: var(--color-primary-hover);
+  }
+}
+
+.btn--secondary {
+  color: var(--color-text);
+  background: var(--color-surface);
+  border-color: var(--color-border);
+
+  &:hover:not(:disabled) {
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+}
+
+// Carte : surface blanche bordée
+.card {
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+// Section de page avec titre (et lien éventuel à droite)
+.section {
+  margin-top: var(--space-8);
+}
+
+.section__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.section__title {
+  font-size: var(--font-size-xl);
+}
+
+// Tableaux : défilement horizontal sur écran étroit plutôt que débordement
+.table-wrapper {
+  overflow-x: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+
+  th,
+  td {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  th {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background: var(--color-bg);
+  }
+}
+
+// Étiquette d'environnement ; PROD est volontairement plus visible
+.env-tag {
+  display: inline-block;
+  padding: 0.0625rem var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.env-tag--prod {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+  border-color: currentColor;
+}
+
+// Numéro de version en police à chasse fixe
+.version {
+  font-family: var(--font-family-mono);
+}
+
+// Messages contextuels (info, avertissement, succès, erreur)
+.alert {
+  padding: var(--space-4);
+  border-left: 4px solid;
+  border-radius: var(--radius-sm);
+}
+
+.alert--info {
+  background: var(--color-info-soft);
+  border-color: var(--color-info);
+}
+
+.alert--warning {
+  background: var(--color-warning-soft);
+  border-color: var(--color-warning);
+}
+
+.alert--success {
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+}
+
+.alert--danger {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
+}
+
+// Fil d'Ariane
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  list-style: none;
+
+  li + li::before {
+    content: '/';
+    margin-right: var(--space-2);
+  }
+}
+
+// Liste de propriétés « libellé : valeur »
+.properties {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+
+  dt {
+    color: var(--color-text-muted);
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
 // Respect de la préférence système « réduire les animations »
 @media (prefers-reduced-motion: reduce) {
   *,

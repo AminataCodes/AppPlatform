@@ -3,12 +3,24 @@ from datetime import datetime
 import pytest
 from sqlalchemy import func, select
 
+from app.api import deployments
 from app.database import SessionLocal
 from app.models import Execution, ExecutionStatus
 
 # Données du seed utilisées ici :
 #   customer-api : DEV 1.3.0, STAGING 1.2.0, PROD 1.1.0, versions 1.0.0 → 1.4.0
 #   payment-api  : versions 2.0.0 → 2.3.0
+
+
+@pytest.fixture(autouse=True)
+def disable_simulation(monkeypatch):
+    """Ces tests portent sur la validation de la demande, pas sur la simulation.
+
+    Le TestClient exécute les tâches d'arrière-plan avant de rendre la main :
+    on neutralise la simulation pour que les exécutions restent QUEUED, comme
+    au moment de la réponse. La simulation est testée dans test_simulation.py.
+    """
+    monkeypatch.setattr(deployments, "run_simulation", lambda execution_id: None)
 
 
 @pytest.fixture

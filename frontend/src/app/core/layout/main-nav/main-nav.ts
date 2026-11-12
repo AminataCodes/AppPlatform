@@ -19,7 +19,7 @@ interface NavItem {
 })
 export class MainNav {
   protected readonly items: NavItem[] = [
-    { label: 'Accueil', path: '/', icon: 'M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z', exact: true },
+    { label: 'Tableau de bord', path: '/', icon: 'M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z', exact: true },
     {
       label: 'Applications',
       path: '/applications',

@@ -8,7 +8,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models import EnvironmentName, ExecutionStatus
+from app.models import EnvironmentName, ExecutionStatus, LogLevel
 
 
 class EnvironmentRead(BaseModel):
@@ -73,3 +73,18 @@ class ExecutionRead(BaseModel):
     created_at: datetime
     started_at: datetime | None
     completed_at: datetime | None
+
+
+class ExecutionLogRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    timestamp: datetime
+    level: LogLevel
+    message: str
+
+
+class ExecutionDetail(ExecutionRead):
+    """Détail d'une exécution : les champs de la liste, plus ses logs."""
+
+    logs: list[ExecutionLogRead]

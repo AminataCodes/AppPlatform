@@ -1,0 +1,66 @@
+<app-page-header
+  heading="Tableau de bord"
+  description="Vue d'ensemble des applications et des derniers déploiements simulés."
+/>
+
+@if (loading()) {
+  <app-loading-state label="Chargement du tableau de bord…" />
+} @else if (error(); as error) {
+  <app-error-state [error]="error" (retry)="load()" />
+} @else {
+  <section aria-labelledby="indicators-title">
+    <h2 id="indicators-title" class="visually-hidden">Indicateurs</h2>
+    <ul class="indicators">
+      <li class="card indicator">
+        <span class="indicator__value">{{ applications().length }}</span>
+        <span class="indicator__label">Applications</span>
+      </li>
+      <li class="card indicator indicator--success">
+        <span class="indicator__value">{{ succeededCount() }}</span>
+        <span class="indicator__label">Déploiements réussis</span>
+      </li>
+      <li class="card indicator indicator--danger">
+        <span class="indicator__value">{{ failedCount() }}</span>
+        <span class="indicator__label">Déploiements échoués</span>
+      </li>
+      <li class="card indicator indicator--info">
+        <span class="indicator__value">{{ activeCount() }}</span>
+        <span class="indicator__label">En attente ou en cours</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="section" aria-labelledby="recent-title">
+    <div class="section__header">
+      <h2 id="recent-title" class="section__title">Dernières exécutions</h2>
+      @if (executions().length > 0) {
+        <a routerLink="/executions">Voir tout l'historique</a>
+      }
+    </div>
+    @if (recentExecutions().length === 0) {
+      <app-empty-state
+        heading="Aucune exécution pour le moment"
+        message="Ouvrez une application pour demander un premier déploiement."
+      />
+    } @else {
+      <app-execution-table [executions]="recentExecutions()" caption="Dernières exécutions" />
+    }
+  </section>
+
+  <section class="section" aria-labelledby="applications-title">
+    <div class="section__header">
+      <h2 id="applications-title" class="section__title">Accès rapide aux applications</h2>
+      <a routerLink="/applications">Voir le catalogue</a>
+    </div>
+    <ul class="quick-links">
+      @for (application of applications(); track application.id) {
+        <li>
+          <a class="card quick-link" [routerLink]="['/applications', application.id]">
+            <span class="quick-link__name">{{ application.name }}</span>
+            <span class="quick-link__team">{{ application.owner_team }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+}

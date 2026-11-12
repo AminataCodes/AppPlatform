@@ -1,0 +1,114 @@
+<nav aria-label="Fil d'Ariane">
+  <ol class="breadcrumb">
+    <li><a routerLink="/executions">Historique</a></li>
+    <li aria-current="page">Exécution {{ id() }}</li>
+  </ol>
+</nav>
+
+<!-- Région annoncée par les lecteurs d'écran à chaque changement de statut -->
+<p class="visually-hidden" aria-live="polite">{{ announcement() }}</p>
+
+@if (error(); as error) {
+  <app-error-state
+    [error]="error"
+    [heading]="error.kind === 'not-found' ? 'Exécution introuvable' : 'Le suivi de l\'exécution est interrompu'"
+    (retry)="watch()"
+  />
+}
+
+@if (loading()) {
+  <app-loading-state label="Chargement de l'exécution…" />
+}
+
+@if (execution(); as execution) {
+  <div class="detail-header">
+    <h1 class="detail-header__title">Exécution {{ execution.id }}</h1>
+    <app-status-badge [status]="execution.status" />
+  </div>
+
+  <!-- Résultat ou progression, en texte : la couleur n'est jamais le seul signal -->
+  @switch (execution.status) {
+    @case ('QUEUED') {
+      <p class="alert alert--info outcome">La demande est en attente de traitement.</p>
+    }
+    @case ('RUNNING') {
+      <p class="alert alert--info outcome">
+        Déploiement en cours. Cette page se met à jour automatiquement.
+      </p>
+    }
+    @case ('SUCCEEDED') {
+      <p class="alert alert--success outcome">
+        <strong>Déploiement réussi.</strong>
+        {{ execution.environment.name }} est maintenant en version
+        <span class="version">{{ execution.requested_version }}</span>.
+      </p>
+    }
+    @case ('FAILED') {
+      <p class="alert alert--danger outcome">
+        <strong>Le déploiement a échoué.</strong>
+        La version précédemment déployée sur {{ execution.environment.name }} reste en place.
+        Consultez les logs ci-dessous pour comprendre la cause.
+      </p>
+    }
+  }
+
+  <div class="detail-grid">
+    <section class="card" aria-labelledby="summary-title">
+      <h2 id="summary-title" class="card__title">Demande</h2>
+      <dl class="properties">
+        <dt>Application</dt>
+        <dd>
+          <a [routerLink]="['/applications', execution.application.id]">{{ execution.application.name }}</a>
+        </dd>
+        <dt>Environnement</dt>
+        <dd>
+          <span class="env-tag" [class.env-tag--prod]="execution.environment.name === 'PROD'">
+            {{ execution.environment.name }}
+          </span>
+        </dd>
+        <dt>Version demandée</dt>
+        <dd class="version">{{ execution.requested_version }}</dd>
+      </dl>
+    </section>
+
+    <section class="card" aria-labelledby="timeline-title">
+      <h2 id="timeline-title" class="card__title">Chronologie</h2>
+      <dl class="properties">
+        <dt>Demandée le</dt>
+        <dd>{{ execution.created_at | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+        <dt>Démarrée le</dt>
+        <dd>{{ execution.started_at ? (execution.started_at | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}</dd>
+        <dt>Terminée le</dt>
+        <dd>{{ execution.completed_at ? (execution.completed_at | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}</dd>
+        @if (durationSeconds() !== null) {
+          <dt>Durée</dt>
+          <dd>{{ durationSeconds() }} s</dd>
+        }
+      </dl>
+    </section>
+  </div>
+
+  <section class="section" aria-labelledby="logs-title">
+    <h2 id="logs-title" class="section__title">Logs</h2>
+    <!-- role="log" : les nouveaux messages sont annoncés sans interrompre l'utilisateur -->
+    <div class="logs" role="log" aria-labelledby="logs-title">
+      @if (execution.logs.length === 0) {
+        <p class="logs__empty">Aucun log pour le moment.</p>
+      } @else {
+        <ol class="logs__list">
+          @for (log of execution.logs; track log.id) {
+            <li class="log" [class]="'log log--' + log.level.toLowerCase()">
+              <time class="log__time" [attr.datetime]="log.timestamp">{{ log.timestamp | date: 'HH:mm:ss' }}</time>
+              <span class="log__level">{{ log.level }}</span>
+              <span class="log__message">{{ log.message }}</span>
+            </li>
+          }
+        </ol>
+      }
+    </div>
+  </section>
+
+  <p class="simulation-note">
+    Déploiement simulé : aucune infrastructure réelle n'a été contactée ni modifiée.
+  </p>
+}

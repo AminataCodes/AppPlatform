@@ -1,0 +1,59 @@
+.application-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.application__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.application__name {
+  font-size: var(--font-size-xl);
+  font-family: var(--font-family-mono);
+
+  a {
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.application__team {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.application__description {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+// Résumé des trois environnements sur une ligne
+.application__environments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.application__environment {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  dd {
+    margin: 0;
+    font-weight: var(--font-weight-semibold);
+  }
+}

@@ -1,0 +1,75 @@
+<nav aria-label="Fil d'Ariane">
+  <ol class="breadcrumb">
+    <li><a routerLink="/applications">Applications</a></li>
+    <li aria-current="page">{{ application()?.name ?? 'Application ' + id() }}</li>
+  </ol>
+</nav>
+
+@if (loading()) {
+  <app-loading-state label="Chargement de l'application…" />
+} @else if (error(); as error) {
+  <app-error-state
+    [error]="error"
+    [heading]="error.kind === 'not-found' ? 'Application introuvable' : 'Impossible de charger l\'application'"
+    (retry)="load()"
+  />
+} @else if (application(); as application) {
+  <div class="identity">
+    <div>
+      <h1 class="identity__name">{{ application.name }}</h1>
+      <p class="identity__description">{{ application.description }}</p>
+      <p class="identity__team">Équipe propriétaire : <strong>{{ application.owner_team }}</strong></p>
+    </div>
+    <a class="btn btn--primary" [routerLink]="['/applications', application.id, 'deploy']">
+      Déployer une version
+    </a>
+  </div>
+
+  <section class="section" aria-labelledby="environments-title">
+    <h2 id="environments-title" class="section__title">Environnements</h2>
+    <ul class="environments">
+      @for (environment of application.environments; track environment.id) {
+        <li>
+          <app-environment-card
+            [environment]="environment"
+            [lastExecution]="lastExecutionByEnvironment().get(environment.id)"
+          />
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="section" aria-labelledby="versions-title">
+    <h2 id="versions-title" class="section__title">Versions disponibles</h2>
+    <ul class="versions">
+      @for (version of application.available_versions; track version) {
+        <li class="versions__item">
+          <span class="version">{{ version }}</span>
+          @for (environmentName of environmentsRunning(application, version); track environmentName) {
+            <span class="env-tag" [class.env-tag--prod]="environmentName === 'PROD'">{{ environmentName }}</span>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="section" aria-labelledby="executions-title">
+    <div class="section__header">
+      <h2 id="executions-title" class="section__title">Dernières exécutions</h2>
+      @if (executions().length > recentExecutions().length) {
+        <a routerLink="/executions">Voir tout l'historique</a>
+      }
+    </div>
+    @if (recentExecutions().length === 0) {
+      <app-empty-state
+        heading="Aucune exécution pour cette application"
+        message="Les demandes de déploiement de {{ application.name }} apparaîtront ici."
+      />
+    } @else {
+      <app-execution-table
+        [executions]="recentExecutions()"
+        caption="Dernières exécutions de {{ application.name }}"
+      />
+    }
+  </section>
+}

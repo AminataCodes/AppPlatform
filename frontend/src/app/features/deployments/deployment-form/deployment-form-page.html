@@ -1,0 +1,151 @@
+<nav aria-label="Fil d'Ariane">
+  <ol class="breadcrumb">
+    <li><a routerLink="/applications">Applications</a></li>
+    <li>
+      <a [routerLink]="['/applications', id()]">{{ application()?.name ?? 'Application ' + id() }}</a>
+    </li>
+    <li aria-current="page">Déployer</li>
+  </ol>
+</nav>
+
+@if (loading()) {
+  <app-loading-state label="Chargement de l'application…" />
+} @else if (loadError(); as error) {
+  <app-error-state
+    [error]="error"
+    [heading]="error.kind === 'not-found' ? 'Application introuvable' : 'Impossible de préparer le formulaire'"
+    (retry)="load()"
+  />
+} @else if (application(); as application) {
+  <app-page-header
+    heading="Déployer {{ application.name }}"
+    description="Choisissez l'environnement cible et la version, puis vérifiez votre demande. Le déploiement est simulé."
+  />
+
+  <ol class="steps" aria-label="Étapes de la demande">
+    <li class="steps__item" [class.steps__item--current]="step() === 'edit'" [attr.aria-current]="step() === 'edit' ? 'step' : null">
+      1. Environnement et version
+    </li>
+    <li class="steps__item" [class.steps__item--current]="step() === 'review'" [attr.aria-current]="step() === 'review' ? 'step' : null">
+      2. Vérification
+    </li>
+  </ol>
+
+  <form class="card" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    @if (step() === 'edit') {
+      <h2 #stepHeading class="form__title" tabindex="-1">Environnement et version</h2>
+
+      <fieldset class="field" [attr.aria-describedby]="showError('environmentId') ? 'environment-error' : null">
+        <legend class="field__label">Environnement cible</legend>
+        <div class="env-options">
+          @for (environment of application.environments; track environment.id) {
+            <label class="env-option" [class.env-option--selected]="formValue().environmentId === environment.id">
+              <input type="radio" formControlName="environmentId" [value]="environment.id" />
+              <span class="env-tag" [class.env-tag--prod]="environment.name === 'PROD'">{{ environment.name }}</span>
+              <span class="env-option__current">
+                Actuellement <span class="version">{{ environment.deployed_version }}</span>
+              </span>
+            </label>
+          }
+        </div>
+        @if (showError('environmentId')) {
+          <p id="environment-error" class="field__error">Choisissez un environnement.</p>
+        }
+      </fieldset>
+
+      <div class="field">
+        <label class="field__label" for="version">Version à déployer</label>
+        <p id="version-hint" class="field__hint">Seules les versions disponibles pour {{ application.name }} sont proposées.</p>
+        <select
+          id="version"
+          class="field__control version"
+          formControlName="version"
+          [attr.aria-invalid]="showError('version')"
+          [attr.aria-describedby]="showError('version') ? 'version-hint version-error' : 'version-hint'"
+        >
+          <option value="" disabled>Choisir une version</option>
+          @for (version of application.available_versions; track version) {
+            <option [value]="version">{{ version }}</option>
+          }
+        </select>
+        @if (showError('version')) {
+          <p id="version-error" class="field__error">Choisissez une version.</p>
+        }
+      </div>
+
+      @if (activeExecution(); as execution) {
+        <div class="alert alert--warning" role="status">
+          Un déploiement est déjà en cours sur {{ execution.environment.name }}. Attendez sa fin avant d'en demander un
+          autre.
+          <a [routerLink]="['/executions', execution.id]">Suivre le déploiement en cours</a>
+        </div>
+      } @else if (isRedeploy()) {
+        <p class="alert alert--warning" role="status">
+          La version <span class="version">{{ formValue().version }}</span> est déjà déployée en
+          {{ selectedEnvironment()?.name }} : la demande la redéploiera.
+        </p>
+      }
+
+      <div class="form__actions">
+        <a class="btn btn--secondary" [routerLink]="['/applications', application.id]">Annuler</a>
+        <button type="submit" class="btn btn--primary" [disabled]="!!activeExecution()">Vérifier la demande</button>
+      </div>
+    } @else {
+      <h2 #stepHeading class="form__title" tabindex="-1">Vérifiez votre demande</h2>
+
+      <dl class="properties review">
+        <dt>Application</dt>
+        <dd>{{ application.name }}</dd>
+        <dt>Environnement</dt>
+        <dd>
+          <span class="env-tag" [class.env-tag--prod]="isProduction()">{{ selectedEnvironment()?.name }}</span>
+        </dd>
+        <dt>Version actuelle</dt>
+        <dd class="version">{{ selectedEnvironment()?.deployed_version }}</dd>
+        <dt>Nouvelle version</dt>
+        <dd class="version review__new">{{ formValue().version }}</dd>
+      </dl>
+
+      @if (isRedeploy()) {
+        <p class="alert alert--warning">Cette version est déjà déployée : la demande la redéploiera.</p>
+      }
+
+      @if (isProduction()) {
+        <div class="alert alert--danger prod-confirmation">
+          <p>
+            <strong>Déploiement en production.</strong>
+            Cette opération concerne l'environnement utilisé par les clients. Vérifiez la version avant de confirmer.
+          </p>
+          <label class="checkbox">
+            <input type="checkbox" formControlName="confirmProduction" />
+            Je confirme vouloir déployer {{ application.name }} {{ formValue().version }} en PROD.
+          </label>
+        </div>
+      }
+
+      @if (submitError(); as error) {
+        <div class="alert alert--danger" role="alert">
+          <p><strong>La demande a été refusée.</strong> {{ error.message }}</p>
+          @if (error.kind === 'conflict') {
+            <a routerLink="/executions">Voir l'historique des exécutions</a>
+          }
+        </div>
+      }
+
+      <div class="form__actions">
+        <button type="button" class="btn btn--secondary" [disabled]="submitting()" (click)="backToEdit()">
+          Modifier
+        </button>
+        <button type="submit" class="btn btn--primary" [disabled]="!canSubmit()">
+          @if (submitting()) {
+            Envoi en cours…
+          } @else if (isProduction()) {
+            Confirmer le déploiement en PROD
+          } @else {
+            Confirmer le déploiement
+          }
+        </button>
+      </div>
+    }
+  </form>
+}

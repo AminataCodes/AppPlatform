@@ -53,7 +53,24 @@ Endpoints disponibles :
 | GET | `/api/health` | Vérifier que l'API répond |
 | GET | `/api/applications` | Lister les applications, leurs environnements et versions disponibles |
 | GET | `/api/applications/{id}` | Détail d'une application (404 si elle n'existe pas) |
-| POST | `/api/deployments` | Demander un déploiement : vérifie les règles métier et crée une exécution `QUEUED` (202, ou 404 / 409 / 422) |
+| POST | `/api/deployments` | Demander un déploiement : vérifie les règles métier, crée une exécution `QUEUED` et lance la simulation en arrière-plan (202, ou 404 / 409 / 422) |
+| GET | `/api/executions` | Historique des exécutions, de la plus récente à la plus ancienne |
+| GET | `/api/executions/{id}` | Détail d'une exécution avec ses logs (404 si elle n'existe pas) |
+
+### Déploiements simulés
+
+Aucun déploiement n'est réellement effectué. Après une demande acceptée, une tâche d'arrière-plan
+fait passer l'exécution de `QUEUED` à `RUNNING`, écrit un log à chaque étape (environ 5 secondes au
+total), puis la termine en `SUCCEEDED` ou `FAILED`. La version déployée de l'environnement n'est mise
+à jour qu'en cas de succès.
+
+Pour la démonstration, le résultat est déterministe :
+
+- `customer-api` en version `1.4.0` échoue toujours (règle de simulation uniquement) ;
+- toute autre demande valide réussit.
+
+La durée de chaque étape peut être changée avec la variable d'environnement
+`APPPLATFORM_SIMULATION_STEP_DELAY_SECONDS` (1 seconde par défaut).
 
 ### Base de données
 

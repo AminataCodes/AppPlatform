@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app import config
-from app.api import applications, deployments, health
+from app.api import applications, deployments, executions, health
 from app.database import SessionLocal, init_db
 from app.seed import seed_database
 
@@ -29,3 +29,4 @@ app = FastAPI(title=config.APP_NAME, version=config.APP_VERSION, lifespan=lifesp
 app.include_router(health.router, prefix=config.API_PREFIX)
 app.include_router(applications.router, prefix=config.API_PREFIX)
 app.include_router(deployments.router, prefix=config.API_PREFIX)
+app.include_router(executions.router, prefix=config.API_PREFIX)
